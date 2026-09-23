@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="RENDAT ABSEN CERDAS - dashboard pengelolaan tautan presensi, data siswa, template WhatsApp, Excel, Firebase, dan Fonnte.">
+    <meta name="theme-color" content="#0000FF">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>RENDAT ABSEN CERDAS &bull; Dashboard Executive</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#0000FF',     // Royal Blue
+                            gold: '#FFD700',     // Solar Gold
+                            light: '#e6e6ff',
+                            dark: '#0000cc'
+                        },
+                        wa: {
+                            bg: '#e5ddd5',
+                            bubbleIn: '#ffffff',
+                            bubbleOut: '#d9fdd3',
+                            header: '#00a884'
+                        }
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 40px -10px rgba(0, 0, 255, 0.1)',
+                        'gold-glow': '0 0 15px rgba(255, 215, 0, 0.5)',
+                        'blue-glow': '0 0 15px rgba(0, 0, 255, 0.3)'
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        // Fallback logo lokal-di-dokumen: tetap tampil walau host gambar eksternal gagal.
+        window.useLogoFallback = function(img, label = 'SMP 6') {
+            img.onerror = null;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><rect width="180" height="180" rx="28" fill="white"/><circle cx="90" cy="90" r="72" fill="#0000FF"/><circle cx="90" cy="90" r="60" fill="#FFD700"/><circle cx="90" cy="90" r="49" fill="#0000FF"/><text x="90" y="83" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="white">SMP</text><text x="90" y="116" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="800" fill="#FFD700">6</text></svg>`;
+            img.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+            img.title = 'Logo asli gagal dimuat dari host eksternal';
+        };
+    </script>
+    <style>
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0000FF; }
+        
+        body { background-color: #f8fafc; }
+        
+        .glass-header {
+            background: linear-gradient(135deg, #0000FF 0%, #0000aa 100%);
+            border-bottom: 3px solid #FFD700;
+        }
+        
+        .nav-btn.active {
+            background-color: #0000FF;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 255, 0.3);
+        }
+        
+        .nav-btn.active .icon-container { color: #FFD700; }
+        
+        /* WhatsApp Chat Pattern */
+        .chat-pattern {
+            background-color: #efeae2;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(17, 94, 89, 0.05) 0 2px, transparent 2.5px),
+                radial-gradient(circle at 80% 60%, rgba(17, 94, 89, 0.04) 0 2px, transparent 2.5px),
+                linear-gradient(45deg, rgba(255,255,255,0.18) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.18) 75%);
+            background-size: 32px 32px, 38px 38px, 48px 48px;
+            background-position: 0 0, 12px 10px, 0 0;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen font-sans antialiased flex flex-col selection:bg-brand-gold selection:text-brand-blue">
+
+    <header class="glass-header text-white sticky top-0 z-40 shadow-xl">
+        <div class="max-w-[1400px] mx-auto px-4 lg:px-6 py-3 flex items-center justify-between gap-4">
+            
+            <!-- Left: Logo & Title -->
+            <div class="flex items-center space-x-4">
+                <!-- Hamburger Mobile -->
+                <button onclick="toggleMobileSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition text-brand-gold">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+
+                <!-- THE 90x90 LOGO CONTAINER -->
+                <div class="relative w-[90px] h-[90px] flex-shrink-0 bg-white rounded-2xl border-[3px] border-brand-gold p-1 shadow-gold-glow flex items-center justify-center overflow-hidden">
+                    <img src="https://i.ibb.co/JWy6dhzM/LOGO-SMP6-1-removebg-preview.png"
+                         alt="Logo SMP 6"
+                         class="w-full h-full object-contain"
+                         referrerpolicy="no-referrer"
+                         decoding="async"
+                         onerror="useLogoFallback(this, 'SMP 6')">
+                </div>
+
+                <div class="hidden sm:block">
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl font-extrabold tracking-tight text-white drop-shadow-md">RENDAT ABSEN CERDAS</h1>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-md bg-brand-gold text-brand-blue shadow-sm">
+                            <i class="fa-solid fa-crown text-[9px]"></i> PRO EDITION
+                        </span>
+                    </div>
+                    <p class="text-xs text-blue-100 mt-1 font-medium tracking-wide">
+                        Sistem Manajemen Tautan Presensi, Data Siswa & WhatsApp Gateway Bot
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right: Status & Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Cloud Status -->
+                <div class="hidden md:flex flex-col items-end mr-4">
+                    <div id="cloudStatus" class="flex items-center gap-1.5 text-xs font-semibold text-brand-gold">
+                        <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-yellow-300 animate-pulse"></span>
+                        <span id="cloudStatusText">Menghubungkan Cloud...</span>
+                    </div>
+                    <div class="text-[10px] text-blue-200 font-mono flex items-center gap-1">
+                        UID: <span id="firebaseUserId" class="select-all">Menghubungkan...</span>
+                    </div>
+                </div>
+
+                <!-- Excel Actions -->
+                <button onclick="downloadTemplateExcel()" 
+                        class="px-4 py-2 rounded-xl bg-white hover:bg-gray-100 text-brand-blue font-bold shadow-md transition transform active:scale-95 flex items-center gap-2 text-sm border-2 border-transparent">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">Unduh Format</span>
+                </button>
+
+                <label class="px-4 py-2 rounded-xl bg-brand-gold hover:bg-yellow-400 text-brand-blue font-extrabold cursor-pointer transition flex items-center gap-2 text-sm shadow-gold-glow border-2 border-brand-gold">
+                    <i class="fa-solid fa-upload"></i>
+                    <span class="hidden sm:inline">Upload Excel</span>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-[1400px] mx-auto px-4 lg:px-6 py-6 flex-1 w-full flex flex-col xl:flex-row gap-6">
+
+        <!-- Sidebar Navigation -->
+        <aside id="appSidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white xl:bg-transparent xl:static xl:w-64 flex flex-col shrink-0 p-5 xl:p-0 transition-transform duration-300 -translate-x-full xl:translate-x-0 border-r border-slate-200 xl:border-none shadow-2xl xl:shadow-none h-full xl:h-auto">
+            
+            <div class="flex items-center justify-between xl:hidden pb-4 mb-4 border-b border-slate-100">
+                <span class="font-extrabold text-brand-blue text-lg">Menu Navigasi</span>
+                <button onclick="toggleMobileSidebar()" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="bg-white xl:rounded-3xl xl:border xl:border-slate-200/60 xl:shadow-premium p-4 space-y-6">
+                
+                <nav class="space-y-2">
+                    <div class="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Database Sekolah</div>
+
+                    <button onclick="switchView('classes')" id="navItem-classes" 
+                            class="nav-btn active w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold transition group text-slate-600 hover:bg-slate-50">
+                        <div class="flex items-center gap-3">
+                            <div class="icon-container w-6 text-center text-brand-blue group-hover:text-brand-blue transition-colors"><i class="fa-solid fa-table-list"></i></div>
+                            <span>Direktori Kelas</span>
+                        </div>
+                        <span id="navCountClasses" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-mono">0</span>
+                    </button>
+
+                    <div class="pt-3 px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Konfigurasi Bot WA</div>
+
+                    <button onclick="switchView('templates')" id="navItem-templates" 
+                            class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold transition group text-slate-600 hover:bg-slate-50">
+                        <div class="flex items-center gap-3">
+                            <div class="icon-container w-6 text-center text-brand-blue group-hover:text-brand-blue"><i class="fa-regular fa-comment-dots"></i></div>
+                            <span>Edit Template WA</span>
+                        </div>
+                    </button>
+
+                    <button onclick="switchView('fonnte')" id="navItem-fonnte" 
+                            class="nav-btn w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold transition group text-slate-600 hover:bg-slate-50">
+                        <div class="flex items-center gap-3">
+                            <div class="icon-container w-6 text-center text-brand-blue group-hover:text-brand-blue"><i class="fa-solid fa-plug"></i></div>
+                            <span>Koneksi Fonnte</span>
+                        </div>
+                        <span id="navFonnteStatusDot" class="w-2.5 h-2.5 rounded-full bg-red-400 shadow-sm"></span>
+                    </button>
+
+                    <button onclick="openTemplateGuideModal()" 
+                            class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold transition group text-slate-600 hover:bg-slate-50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 text-center text-slate-400 group-hover:text-brand-blue"><i class="fa-solid fa-code"></i></div>
+                            <span>Instalasi Bot</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>
+                    </button>
+                </nav>
+
+                <div class="p-4 rounded-2xl bg-brand-light border border-brand-blue/20 text-brand-dark space-y-2">
+                    <div class="flex items-center justify-between font-bold text-xs">
+                        <span>Status Gateway</span>
+                        <span class="text-green-600 bg-green-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> OK
+                        </span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed font-medium text-brand-blue">
+                        Setiap pembaruan data dan link kelas otomatis tersinkronisasi dengan balasan WhatsApp.
+                    </p>
+                </div>
+                
+            </div>
+        </aside>
+        
+        <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden xl:hidden"></div>
+
+        <main class="flex-1 min-w-0 flex flex-col space-y-6">
+
+            <!-- VIEW 1: DIREKTORI KELAS -->
+            <div id="viewSectionClasses" class="space-y-6">
+                
+                <!-- Executive Stats -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-premium flex flex-col justify-center">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs uppercase tracking-wider font-bold text-slate-500">Total Kelas</span>
+                            <div class="w-10 h-10 rounded-2xl bg-brand-light text-brand-blue flex items-center justify-center text-lg"><i class="fa-solid fa-school"></i></div>
+                        </div>
+                        <span id="statTotalKelas" class="text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-premium flex flex-col justify-center">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs uppercase tracking-wider font-bold text-slate-500">Tautan Rekapan</span>
+                            <div class="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center text-lg"><i class="fa-solid fa-clipboard-check"></i></div>
+                        </div>
+                        <span id="statTotalAbsen" class="text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-premium flex flex-col justify-center">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs uppercase tracking-wider font-bold text-slate-500">Data Siswa</span>
+                            <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg"><i class="fa-solid fa-users"></i></div>
+                        </div>
+                        <span id="statTotalMurid" class="text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-premium flex flex-col justify-center cursor-pointer hover:border-brand-blue/50 transition" onclick="switchView('templates')">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs uppercase tracking-wider font-bold text-slate-500">Auto-Reply WA</span>
+                            <div class="w-10 h-10 rounded-2xl bg-[#00a884]/10 text-[#00a884] flex items-center justify-center text-lg"><i class="fa-brands fa-whatsapp"></i></div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="w-2.5 h-2.5 rounded-full bg-brand-gold animate-pulse"></span>
+                            <span class="text-sm font-bold text-brand-blue">Siap Pakai</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toolbar & Table -->
+                <div class="bg-white rounded-3xl border border-slate-200 shadow-premium overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        
+                        <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
+                            <button onclick="setGradeFilter('ALL')" id="tabFilterALL" class="grade-tab px-4 py-2 rounded-xl font-bold bg-brand-blue text-white shadow-md text-sm whitespace-nowrap transition">Semua</button>
+                            <button onclick="setGradeFilter('7')" id="tabFilter7" class="grade-tab px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 text-sm whitespace-nowrap transition">Kelas 7</button>
+                            <button onclick="setGradeFilter('8')" id="tabFilter8" class="grade-tab px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 text-sm whitespace-nowrap transition">Kelas 8</button>
+                            <button onclick="setGradeFilter('9')" id="tabFilter9" class="grade-tab px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 text-sm whitespace-nowrap transition">Kelas 9</button>
+                        </div>
+
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="searchInput" oninput="filterClassList()" placeholder="Cari data kelas..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm font-medium">
+                            </div>
+                            <button onclick="openModalAddClass()" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-dark text-white font-bold text-sm shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                                <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Tambah Data</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-brand-blue text-white uppercase text-xs font-extrabold tracking-wider">
+                                <tr>
+                                    <th class="py-4 px-6 rounded-tl-lg">Kode Kelas</th>
+                                    <th class="py-4 px-6">Tautan Rekapan Absen</th>
+                                    <th class="py-4 px-6">Tautan Data Murid</th>
+                                    <th class="py-4 px-6">Wali Kelas</th>
+                                    <th class="py-4 px-6 text-center w-28 rounded-tr-lg">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classesTableBody" class="divide-y divide-slate-100 font-medium bg-white">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="emptyState" class="hidden py-16 px-6 text-center bg-slate-50">
+                        <div class="w-24 h-24 bg-brand-light rounded-full flex items-center justify-center mx-auto text-brand-blue text-4xl mb-4 shadow-inner">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-slate-800">Data Kelas Kosong</h3>
+                        <p class="text-sm text-slate-500 max-w-md mx-auto mt-2 mb-6">Silakan tambah kelas secara manual atau gunakan fitur Upload Excel untuk memasukkan data secara massal.</p>
+                        <button onclick="openModalAddClass()" class="px-6 py-3 bg-brand-blue hover:bg-brand-dark text-white rounded-xl font-bold shadow-lg transition">
+                            <i class="fa-solid fa-plus mr-2"></i> Tambah Kelas Pertama
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewSectionTemplates" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-premium">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-brand-light text-brand-blue flex items-center justify-center text-xl shadow-inner">
+                                <i class="fa-regular fa-message"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-extrabold text-slate-900">Format Balasan WhatsApp</h2>
+                                <p class="text-sm text-slate-500 font-medium">Sesuaikan teks balasan otomatis yang dikirimkan bot kepada guru.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="resetWaTemplatesToDefault()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">Reset Default</button>
+                            <button onclick="saveWaTemplatesToCloud()" class="px-5 py-2 rounded-xl bg-brand-blue hover:bg-brand-dark text-white font-bold text-sm shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i> Simpan Format
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex overflow-x-auto gap-2">
+                            <button onclick="selectTemplateCategory('rekapan')" id="tabTpl-rekapan" class="tpl-category-btn active flex-1 px-4 py-2.5 rounded-xl font-bold text-sm bg-brand-blue text-white shadow transition">Balasan REKAPAN</button>
+                            <button onclick="selectTemplateCategory('data')" id="tabTpl-data" class="tpl-category-btn flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition">Balasan DATA</button>
+                            <button onclick="selectTemplateCategory('menu')" id="tabTpl-menu" class="tpl-category-btn flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition">Balasan MENU</button>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-premium space-y-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">Nama Sekolah Anda (Variabel <code>{SEKOLAH}</code>)</label>
+                                <input type="text" id="tplSchoolNameInput" value="SMP Negeri 6" oninput="updateLivePreview()" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue font-bold text-brand-blue">
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label id="tplActiveLabel" class="text-sm font-bold text-slate-800">Isi Pesan Balasan:</label>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-3" id="templateVariablesContainer">
+                                    <!-- Populated by JS -->
+                                </div>
+                                <textarea id="tplActiveTextarea" rows="10" oninput="handleTemplateTextareaChange()" class="w-full p-4 text-sm font-mono bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-blue leading-relaxed"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview Panel -->
+                    <div class="bg-slate-900 p-6 rounded-3xl shadow-premium border border-slate-800 flex flex-col">
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+                            <h3 class="text-white font-bold text-sm tracking-widest uppercase">Pratinjau Layar WhatsApp</h3>
+                        </div>
+                        
+                        <div class="flex-1 chat-pattern rounded-2xl p-5 flex flex-col justify-center border-4 border-slate-800 relative shadow-inner overflow-hidden">
+                            <!-- Inbound Chat Bubble -->
+                            <div class="bg-wa-bubbleIn p-4 rounded-2xl rounded-tl-none shadow text-sm leading-relaxed text-slate-800 self-start max-w-[90%] relative border border-slate-200">
+                                <div id="tplLivePreviewHtml" class="space-y-1.5 break-words"></div>
+                                <div class="text-[10px] text-slate-400 text-right mt-1">10:42</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewSectionFonnte" class="hidden space-y-6">
+                <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-premium max-w-4xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-brand-light text-brand-blue flex items-center justify-center text-2xl shadow-inner">
+                                <i class="fa-solid fa-plug"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-slate-900">Koneksi Fonnte & Bot Otomatis</h2>
+                                <p class="text-sm text-slate-500 mt-1">Setelah instalasi Apps Script satu kali, data kelas dan template dapat disinkron langsung dari dashboard ini tanpa menyalin kode lagi.</p>
+                            </div>
+                        </div>
+                        <button onclick="openTemplateGuideModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition whitespace-nowrap">
+                            <i class="fa-solid fa-code mr-2"></i> Instalasi Pertama
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <section class="rounded-2xl border border-slate-200 p-5 bg-slate-50/60">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="w-7 h-7 rounded-lg bg-brand-blue text-white flex items-center justify-center text-xs font-extrabold">1</span>
+                                <h3 class="font-extrabold text-slate-800">Token Fonnte</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-3">Token hanya dipakai untuk mengirimnya ke Apps Script milik Anda melalui HTTPS. Setelah sinkron berhasil, token lokal akan dihapus dari browser.</p>
+                            <div class="relative">
+                                <input type="password" id="fonnteTokenInput" autocomplete="off" placeholder="Paste token Fonnte di sini..." class="w-full pl-4 pr-12 py-3.5 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                                <button type="button" onclick="toggleFonnteTokenVisibility()" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-blue" aria-label="Tampilkan atau sembunyikan token">
+                                    <i id="fonnteEyeIcon" class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="flex gap-2 mt-3">
+                                <button onclick="saveFonnteToken()" class="flex-1 px-4 py-2.5 bg-brand-blue hover:bg-brand-dark text-white font-bold rounded-xl transition text-sm">Simpan Sementara</button>
+                                <button onclick="clearFonnteToken()" class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl transition text-sm">Hapus</button>
+                            </div>
+                        </section>
+
+                        <section class="rounded-2xl border border-slate-200 p-5 bg-slate-50/60">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="w-7 h-7 rounded-lg bg-brand-blue text-white flex items-center justify-center text-xs font-extrabold">2</span>
+                                <h3 class="font-extrabold text-slate-800">URL Web App Google Apps Script</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-3">Tempel URL deployment yang berakhiran <code>/exec</code>. URL ini menjadi webhook WhatsApp dan jalur sinkron data.</p>
+                            <input type="url" id="fonnteWebhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                            <div class="mt-3">
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Kunci Sinkron</label>
+                                <div class="flex gap-2">
+                                    <input type="password" id="fonnteSyncKeyInput" autocomplete="off" class="flex-1 min-w-0 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                                    <button onclick="regenerateSyncKey()" class="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-100" title="Buat kunci baru"><i class="fa-solid fa-rotate"></i></button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="mt-5 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="font-extrabold text-slate-800">Aktifkan Bot</h3>
+                                <p class="text-xs text-slate-500 mt-1">Mengirim token, 25 data kelas, link, dan template ke Apps Script serta mencoba mengatur Webhook + Auto Read + Personal di Fonnte.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="syncBotNow(true)" id="btnSyncBot" class="px-5 py-3 bg-brand-blue hover:bg-brand-dark text-white font-extrabold rounded-xl shadow-md transition flex items-center gap-2">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Sinkronkan & Aktifkan
+                                </button>
+                                <button onclick="checkBotStatus()" id="btnCheckBotStatus" class="px-4 py-3 bg-white hover:bg-slate-100 text-brand-blue font-bold rounded-xl border border-blue-200 transition">
+                                    <i class="fa-solid fa-heart-pulse mr-1"></i> Periksa Status
+                                </button>
+                            </div>
+                        </div>
+                        <label class="mt-4 inline-flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                            <input type="checkbox" id="fonnteAutoSync" onchange="toggleAutoSync(this.checked)" class="w-4 h-4 accent-blue-600">
+                            Sinkron otomatis ketika data kelas atau template berubah
+                        </label>
+                    </section>
+
+                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Backend Bot</div>
+                            <div id="fonnteBackendStatus" class="mt-2 text-sm font-bold text-slate-500"><i class="fa-solid fa-circle-minus mr-1"></i> Belum diperiksa</div>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Perangkat Fonnte</div>
+                            <div id="fonnteDeviceStatus" class="mt-2 text-sm font-bold text-slate-500"><i class="fa-solid fa-circle-minus mr-1"></i> Belum diperiksa</div>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Sinkron Terakhir</div>
+                            <div id="fonnteLastSync" class="mt-2 text-sm font-bold text-slate-500">-</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2 text-xs font-bold" id="fonnteStatusText">
+                        <span class="text-slate-400"><i class="fa-solid fa-circle-info"></i> Jalankan Instalasi Pertama jika Apps Script belum pernah dipasang.</span>
+                    </div>
+
+                    <div class="mt-8 pt-8 border-t border-slate-100">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <h3 class="text-base font-extrabold text-slate-800"><i class="fa-solid fa-paper-plane text-brand-blue mr-2"></i> Tes Kirim WhatsApp Nyata</h3>
+                            <button onclick="refreshFonnteDevice()" class="text-xs font-bold text-brand-blue hover:underline">Periksa perangkat Fonnte</button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <input type="text" id="fonnteTestPhone" inputmode="tel" placeholder="No HP tujuan (contoh: 08123...)" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                            <input type="text" id="fonnteTestMessage" value="Halo! Tes dari RENDAT ABSEN CERDAS." class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                        </div>
+                        <button onclick="testSendFonnteMessage()" id="btnFonnteTest" class="w-full py-3.5 bg-brand-gold hover:bg-yellow-400 text-brand-blue font-extrabold rounded-xl shadow-gold-glow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> Kirim Pesan Uji Coba via Backend
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <aside class="w-full xl:w-[380px] shrink-0 flex flex-col">
+            <div class="bg-slate-900 rounded-[2.5rem] p-3 shadow-2xl border-4 border-slate-800 relative mx-auto w-full max-w-sm">
+                <!-- Phone Inner -->
+                <div class="bg-wa-bg rounded-[2rem] overflow-hidden flex flex-col h-[650px] relative border border-slate-950">
+                    
+                    <!-- WA Header -->
+                    <div class="bg-wa-header text-white px-4 py-3 flex items-center justify-between shadow z-10 pt-8">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-arrow-left text-white/90"></i>
+                            <div class="relative w-10 h-10 rounded-full border border-white/30 p-0.5 bg-white overflow-hidden flex-shrink-0">
+                                <img src="https://i.ibb.co/JWy6dhzM/LOGO-SMP6-1-removebg-preview.png" alt="Bot SMP 6" class="w-full h-full object-contain" referrerpolicy="no-referrer" decoding="async" onerror="useLogoFallback(this, 'SMP 6')">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="font-bold text-sm leading-tight">Bot SMP 6</h4>
+                                    <i class="fa-solid fa-circle-check text-[#FFD700] text-[10px]"></i>
+                                </div>
+                                <p id="botStatusIndicator" class="text-xs text-white/80">Online</p>
+                            </div>
+                        </div>
+                        <button onclick="clearChatSimulator()" class="p-2 hover:bg-white/10 rounded-full transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 chat-pattern text-sm">
+                        <div class="flex justify-start">
+                            <div class="bg-wa-bubbleIn rounded-2xl rounded-tl-none p-3 shadow text-slate-800 max-w-[85%]">
+                                Halo Bapak/Ibu Guru! Ketik kode kelas untuk meminta link.<br><br>Contoh:<br><b>REKAPAN 7A</b><br><b>DATA 7A</b><br><br>Ketik <b>MENU</b> untuk bantuan.
+                                <div class="text-[10px] text-slate-400 text-right mt-1">10:41</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="px-3 py-2 bg-slate-100 flex gap-2 overflow-x-auto text-xs font-bold border-t border-slate-200 shadow-inner">
+                        <button onclick="sendQuickKeyword('REKAPAN 7A')" class="px-3 py-1.5 bg-white border border-slate-300 text-brand-blue rounded-full whitespace-nowrap shadow-sm">REKAPAN 7A</button>
+                        <button onclick="sendQuickKeyword('DATA 7A')" class="px-3 py-1.5 bg-white border border-slate-300 text-purple-600 rounded-full whitespace-nowrap shadow-sm">DATA 7A</button>
+                        <button onclick="sendQuickKeyword('MENU')" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded-full whitespace-nowrap shadow-sm">MENU</button>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-3 bg-slate-100 flex gap-2 items-end">
+                        <div class="flex-1 bg-white rounded-full px-4 py-2 border border-slate-300 flex items-center">
+                            <input type="text" id="waChatInput" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendChatMessage()" class="w-full bg-transparent outline-none text-sm text-slate-800">
+                        </div>
+                        <button onclick="sendChatMessage()" class="w-10 h-10 rounded-full bg-wa-header text-white flex items-center justify-center shadow shrink-0 active:scale-95 transition">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    
+    <!-- Modal Add/Edit Class -->
+    <div id="classModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-xl font-extrabold text-brand-blue">Tambah Kelas Baru</h3>
+                <button onclick="closeClassModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="classForm" onsubmit="saveClassData(event)" class="space-y-4">
+                <input type="hidden" id="editClassId" value="">
+                <div>
+                    <label class="block font-bold text-slate-700 text-sm mb-1">Kode Kelas <span class="text-red-500">*</span></label>
+                    <input type="text" id="inputKelas" required placeholder="Contoh: 7A" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:outline-none uppercase font-bold text-brand-blue">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 text-sm mb-1">Link Rekapan Absen <span class="text-red-500">*</span></label>
+                    <input type="url" id="inputLinkAbsen" required placeholder="https://docs.google.com/..." class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 text-sm mb-1">Link Data Murid <span class="text-red-500">*</span></label>
+                    <input type="url" id="inputLinkMurid" required placeholder="https://docs.google.com/..." class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 text-sm mb-1">Wali Kelas (Opsional)</label>
+                    <input type="text" id="inputWaliKelas" placeholder="Nama Guru" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-blue focus:outline-none text-sm">
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeClassModal()" class="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-blue text-white font-bold shadow-md hover:bg-brand-dark">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Instalasi Bot -->
+    <div id="guideModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-xl font-extrabold text-brand-blue"><i class="fa-solid fa-code mr-2"></i> Instalasi Bot — Sekali Saja</h3>
+                    <p class="text-xs text-slate-500 mt-1">Setelah deployment pertama, perubahan data kelas/template cukup disinkron dari aplikasi. Tidak perlu mengganti kode Apps Script lagi.</p>
+                </div>
+                <button onclick="closeGuideModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs font-bold mb-4">
+                <div class="p-3 rounded-xl bg-blue-50 text-brand-blue">1. Salin kode installer</div>
+                <div class="p-3 rounded-xl bg-slate-50 text-slate-600">2. Tempel ke Code.gs</div>
+                <div class="p-3 rounded-xl bg-slate-50 text-slate-600">3. Deploy sebagai Web App</div>
+                <div class="p-3 rounded-xl bg-slate-50 text-slate-600">4. Tempel URL /exec & Sinkronkan</div>
+            </div>
+            <div class="p-4 mb-4 rounded-2xl border border-amber-200 bg-amber-50 text-xs text-amber-900 leading-relaxed">
+                <b>Penting:</b> gunakan <b>Deploy → New deployment → Web app</b>, jalankan sebagai akun Anda, dan izinkan akses yang diperlukan agar Fonnte dapat memanggil URL tersebut. Jangan memasukkan token Fonnte ke kode ini; aplikasi akan mengirimkannya ke Script Properties saat Anda menekan Sinkronkan.
+            </div>
+            <div class="relative bg-slate-900 rounded-2xl p-4">
+                <button onclick="copyGeneratedBotScript()" class="absolute top-3 right-3 px-3 py-1.5 bg-brand-gold text-brand-blue rounded-lg font-bold text-xs shadow hover:scale-105 transition"><i class="fa-solid fa-copy mr-1"></i> Salin Installer</button>
+                <pre id="botScriptCode" class="text-green-400 text-[11px] font-mono overflow-auto max-h-[52vh] pr-24"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-50 hidden transition-all duration-300">
+        <div class="bg-white text-brand-blue px-6 py-4 rounded-2xl shadow-premium border border-slate-100 flex items-center gap-3 text-sm font-bold">
+            <span id="toastIcon" class="text-brand-gold text-xl"><i class="fa-solid fa-circle-check"></i></span>
+            <span id="toastMessage">Berhasil!</span>
+        </div>
+    </div>
+
+    <!--
+      GitHub Pages production notes:
+      1) Jangan pernah menaruh token Fonnte langsung di source repository.
+      2) Firebase web config memang boleh berada di frontend; lindungi data dengan Authentication + Firestore Rules.
+      3) Aktifkan Anonymous Authentication jika tetap memakai signInAnonymously().
+      4) Untuk keamanan admin yang lebih kuat, gunakan Firebase Authentication berbasis akun dan rules per-user.
+    -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Proyek Resmi link-rendat
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEFREKVdzsArBKM4_CefZTErdFNOH6oXo",
+            authDomain: "link-rendat.firebaseapp.com",
+            projectId: "link-rendat",
+            storageBucket: "link-rendat.firebasestorage.app",
+            messagingSenderId: "254081919680",
+            appId: "1:254081919680:web:43dcb31859d509fbc3db25",
+            measurementId: "G-X02PHYRTQL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = "link-rendat";
+
+        let currentUser = null;
+        let classList = [];
+        let activeGradeFilter = 'ALL';
+        let fonnteToken = "";
+        let fonnteBackendStatus = null;
+        let fonnteAutoSyncTimer = null;
+        let activeTemplateCategory = 'rekapan';
+
+        // Default WA Templates
+        const defaultTemplates = {
+            schoolName: "SMP Negeri 6",
+            rekapan: `📋 *REKAPAN KEHADIRAN KELAS {KELAS}*\n*Sekolah:* {SEKOLAH}\n*Tanggal:* {TANGGAL}\n\n👉 {LINK}\n\n_Wali Kelas: {WALI}_`,
+            data: `👥 *DATA LENGKAP SISWA KELAS {KELAS}*\n*Sekolah:* {SEKOLAH}\n\n👉 {LINK}\n\n_Wali Kelas: {WALI}_`,
+            menu: `👋 *PUSAT DATA {SEKOLAH}*\n\nKetik salah satu:\n• *REKAPAN [KELAS]*\n• *DATA [KELAS]*\n\n📌 *Daftar Kelas:*\n{DAFTAR_KELAS}`,
+            fallback: `⚠️ Pesan "{PESAN}" tidak dikenali.\nKetik *MENU* untuk bantuan.`
+        };
+        let waTemplates = { ...defaultTemplates };
+
+
+        const FONNTE_STORAGE_KEY = 'rendat_fonnte_token_v2_temp';
+        const FONNTE_WEBHOOK_STORAGE_KEY = 'rendat_fonnte_webhook_url_v2';
+        const FONNTE_SYNC_KEY_STORAGE_KEY = 'rendat_fonnte_sync_key_v2';
+        const FONNTE_AUTOSYNC_STORAGE_KEY = 'rendat_fonnte_autosync_v2';
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function safeHttpUrl(value) {
+            try {
+                const url = new URL(String(value || '').trim());
+                return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function formatLocalDateTime() {
+            const now = new Date();
+            return {
+                date: new Intl.DateTimeFormat('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}).format(now),
+                time: new Intl.DateTimeFormat('id-ID', {hour:'2-digit', minute:'2-digit'}).format(now)
+            };
+        }
+
+        function setCloudStatus(state, message) {
+            const dot = document.getElementById('cloudStatusDot');
+            const text = document.getElementById('cloudStatusText');
+            if (!dot || !text) return;
+            const classes = {
+                connecting: 'w-2 h-2 rounded-full bg-yellow-300 animate-pulse',
+                online: 'w-2 h-2 rounded-full bg-green-400 animate-pulse',
+                error: 'w-2 h-2 rounded-full bg-red-400'
+            };
+            dot.className = classes[state] || classes.connecting;
+            text.textContent = message;
+        }
+
+        function markdownToSafeHtml(text) {
+            return escapeHtml(text)
+                .replace(/\*([^*]+)\*/g, '<b>$1</b>')
+                .replace(/_([^_]+)_/g, '<i>$1</i>')
+                .replace(/\n/g, '<br>');
+        }
+
+        async function initApp() {
+            loadFonnteTokenFromDevice();
+            setCloudStatus('connecting', 'Menghubungkan Cloud...');
+            try {
+                await signInAnonymously(auth);
+                currentUser = auth.currentUser;
+                document.getElementById("firebaseUserId").textContent = currentUser?.uid || '-';
+                setCloudStatus('online', 'Cloud Sync Active');
+                listenClasses();
+                listenSettings();
+            } catch (error) {
+                console.error('Firebase init error:', error);
+                showToast("Gagal terhubung ke Cloud: " + error.message, "error");
+                document.getElementById("firebaseUserId").textContent = "Gagal";
+                setCloudStatus('error', 'Cloud gagal terhubung');
+                renderTable();
+                renderTemplateEditor();
+            }
+        }
+
+        // Real-time DB Listeners
+        function listenClasses() {
+            const ref = collection(db, 'artifacts', appId, 'public', 'data', 'classes');
+            onSnapshot(ref, (snap) => {
+                classList = [];
+                snap.forEach(d => classList.push({ id: d.id, ...d.data() }));
+                classList.sort((a, b) => String(a.kelas || '').localeCompare(String(b.kelas || ''), 'id'));
+                renderTable();
+                updateLivePreview();
+                scheduleBotAutoSync();
+            }, (error) => {
+                console.error('Firestore classes listener:', error);
+                setCloudStatus('error', 'Firestore tidak dapat dibaca');
+                showToast('Data kelas gagal dimuat. Periksa Firestore Rules.', 'error');
+            });
+        }
+
+        function listenSettings() {
+            const tplRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'wa_templates');
+            onSnapshot(tplRef, (snap) => {
+                if (snap.exists()) waTemplates = { ...defaultTemplates, ...snap.data() };
+                renderTemplateEditor();
+                scheduleBotAutoSync();
+            }, (error) => {
+                console.error('Firestore template listener:', error);
+                renderTemplateEditor();
+            });
+        }
+
+        function generateSyncKey() {
+            const bytes = new Uint8Array(24);
+            crypto.getRandomValues(bytes);
+            return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function loadFonnteTokenFromDevice() {
+            try {
+                fonnteToken = localStorage.getItem(FONNTE_STORAGE_KEY) || '';
+                const webhook = localStorage.getItem(FONNTE_WEBHOOK_STORAGE_KEY) || '';
+                let syncKey = localStorage.getItem(FONNTE_SYNC_KEY_STORAGE_KEY) || '';
+                if (!syncKey) {
+                    syncKey = generateSyncKey();
+                    localStorage.setItem(FONNTE_SYNC_KEY_STORAGE_KEY, syncKey);
+                }
+                const autoSync = localStorage.getItem(FONNTE_AUTOSYNC_STORAGE_KEY) === '1';
+                const tokenInput = document.getElementById('fonnteTokenInput');
+                const webhookInput = document.getElementById('fonnteWebhookUrlInput');
+                const keyInput = document.getElementById('fonnteSyncKeyInput');
+                const autoInput = document.getElementById('fonnteAutoSync');
+                if (tokenInput) tokenInput.value = fonnteToken;
+                if (webhookInput) webhookInput.value = webhook;
+                if (keyInput) keyInput.value = syncKey;
+                if (autoInput) autoInput.checked = autoSync;
+            } catch (error) {
+                console.error('Gagal memuat pengaturan Fonnte lokal:', error);
+            }
+            updateBotScript();
+            updateFonnteUI();
+            setTimeout(() => checkBotStatus(true), 700);
+        }
+
+        // UI Interactions
+        window.switchView = function(viewId) {
+            ['classes', 'templates', 'fonnte'].forEach(v => {
+                document.getElementById(`viewSection${v.charAt(0).toUpperCase() + v.slice(1)}`).classList.add('hidden');
+                document.getElementById(`navItem-${v}`).classList.remove('active');
+            });
+            document.getElementById(`viewSection${viewId.charAt(0).toUpperCase() + viewId.slice(1)}`).classList.remove('hidden');
+            document.getElementById(`navItem-${viewId}`).classList.add('active');
+            
+            if (window.innerWidth < 1280) {
+                const sb = document.getElementById("appSidebar");
+                if (sb && !sb.classList.contains("-translate-x-full")) toggleMobileSidebar();
+            }
+        }
+
+        window.toggleMobileSidebar = function() {
+            const sb = document.getElementById("appSidebar");
+            const bd = document.getElementById("sidebarBackdrop");
+            sb.classList.toggle("-translate-x-full");
+            bd.classList.toggle("hidden");
+        }
+
+        window.showToast = function(msg, type = "success") {
+            const t = document.getElementById("toastNotification");
+            document.getElementById("toastMessage").textContent = msg;
+            t.classList.remove("hidden");
+            setTimeout(() => t.classList.add("hidden"), 3000);
+        }
+
+        window.copyText = function(text, label) {
+            navigator.clipboard.writeText(text).then(() => showToast(`${label} disalin!`)).catch(() => showToast("Gagal menyalin", "error"));
+        }
+
+        // Classes Logic
+        window.setGradeFilter = function(g) {
+            activeGradeFilter = g;
+            document.querySelectorAll('.grade-tab').forEach(el => {
+                el.className = "grade-tab px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-200 bg-slate-100 text-sm whitespace-nowrap transition";
+            });
+            document.getElementById(`tabFilter${g}`).className = "grade-tab px-4 py-2 rounded-xl font-bold bg-brand-blue text-white shadow-md text-sm whitespace-nowrap transition";
+            renderTable();
+        }
+
+        window.filterClassList = renderTable;
+
+        function renderTable() {
+            const query = (document.getElementById("searchInput")?.value || "").trim().toUpperCase();
+            const filtered = classList.filter(c => {
+                const kelas = String(c.kelas || '').toUpperCase();
+                const wali = String(c.waliKelas || '').toUpperCase();
+                return (activeGradeFilter === 'ALL' || kelas.startsWith(activeGradeFilter)) &&
+                       (!query || kelas.includes(query) || wali.includes(query));
+            });
+
+            const tbody = document.getElementById("classesTableBody");
+            tbody.innerHTML = "";
+            document.getElementById("emptyState").classList.toggle("hidden", filtered.length !== 0);
+
+            filtered.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+                const kelas = String(c.kelas || '-');
+                const wali = String(c.waliKelas || '-');
+                const absenUrl = safeHttpUrl(c.linkAbsen);
+                const muridUrl = safeHttpUrl(c.linkMurid);
+
+                const cellLink = (url, label, colorClass) => {
+                    const td = document.createElement('td');
+                    td.className = 'py-4 px-6';
+                    const wrap = document.createElement('div');
+                    wrap.className = 'flex items-center gap-2';
+                    if (url) {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.className = `${colorClass} hover:underline max-w-[150px] truncate block`;
+                        a.title = url;
+                        a.textContent = url;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'text-slate-400 hover:text-brand-gold';
+                        btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                        btn.addEventListener('click', () => copyText(url, label));
+                        wrap.append(a, btn);
+                    } else {
+                        const span = document.createElement('span');
+                        span.className = 'text-slate-400 italic';
+                        span.textContent = 'Link tidak valid/kosong';
+                        wrap.append(span);
+                    }
+                    td.append(wrap);
+                    return td;
+                };
+
+                const tdKelas = document.createElement('td');
+                tdKelas.className = 'py-4 px-6 font-extrabold text-brand-blue text-base';
+                tdKelas.textContent = kelas;
+
+                const tdWali = document.createElement('td');
+                tdWali.className = 'py-4 px-6 text-slate-600';
+                tdWali.textContent = wali;
+
+                const tdActions = document.createElement('td');
+                tdActions.className = 'py-4 px-6 text-center';
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'text-brand-blue hover:text-brand-gold mx-1';
+                editBtn.setAttribute('aria-label', `Edit kelas ${kelas}`);
+                editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+                editBtn.addEventListener('click', () => editClass(c.id));
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'text-red-500 hover:text-red-700 mx-1';
+                delBtn.setAttribute('aria-label', `Hapus kelas ${kelas}`);
+                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                delBtn.addEventListener('click', () => deleteClass(c.id));
+                tdActions.append(editBtn, delBtn);
+
+                tr.append(tdKelas, cellLink(absenUrl, 'Link Absen', 'text-blue-600'), cellLink(muridUrl, 'Link Murid', 'text-purple-600'), tdWali, tdActions);
+                tbody.append(tr);
+            });
+
+            document.getElementById("statTotalKelas").textContent = classList.length;
+            document.getElementById("navCountClasses").textContent = classList.length;
+            document.getElementById("statTotalAbsen").textContent = classList.filter(c => safeHttpUrl(c.linkAbsen)).length;
+            document.getElementById("statTotalMurid").textContent = classList.filter(c => safeHttpUrl(c.linkMurid)).length;
+            updateBotScript();
+        }
+
+        window.openModalAddClass = () => {
+            document.getElementById("classForm").reset();
+            document.getElementById("editClassId").value = "";
+            document.getElementById("modalTitle").textContent = "Tambah Kelas";
+            document.getElementById("classModal").classList.remove("hidden");
+        }
+        window.closeClassModal = () => document.getElementById("classModal").classList.add("hidden");
+
+        window.editClass = (id) => {
+            const c = classList.find(x => x.id === id);
+            if(!c) return;
+            document.getElementById("editClassId").value = c.id;
+            document.getElementById("inputKelas").value = c.kelas;
+            document.getElementById("inputLinkAbsen").value = c.linkAbsen;
+            document.getElementById("inputLinkMurid").value = c.linkMurid;
+            document.getElementById("inputWaliKelas").value = c.waliKelas || "";
+            document.getElementById("modalTitle").textContent = "Edit Kelas " + c.kelas;
+            document.getElementById("classModal").classList.remove("hidden");
+        }
+
+        window.saveClassData = async (e) => {
+            e.preventDefault();
+            if(!currentUser) return showToast("Firebase tidak terhubung", "error");
+            const id = document.getElementById("editClassId").value;
+            const data = {
+                kelas: document.getElementById("inputKelas").value.toUpperCase().trim(),
+                linkAbsen: safeHttpUrl(document.getElementById("inputLinkAbsen").value),
+                linkMurid: safeHttpUrl(document.getElementById("inputLinkMurid").value),
+                waliKelas: document.getElementById("inputWaliKelas").value.trim(),
+                updatedAt: Date.now()
+            };
+            if (!data.kelas) return showToast("Kode kelas wajib diisi", "error");
+            if (!data.linkAbsen || !data.linkMurid) return showToast("Link harus URL http/https yang valid", "error");
+
+            try {
+                if(id) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', id), data);
+                    showToast("Diperbarui!");
+                } else {
+                    if(classList.some(c => c.kelas === data.kelas)) return showToast("Kelas sudah ada!", "error");
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'classes'), data);
+                    showToast("Tersimpan!");
+                }
+                closeClassModal();
+            } catch(err) {
+                showToast("Error: " + err.message, "error");
+            }
+        }
+
+        window.deleteClass = async (id) => {
+            if (!confirm("Hapus kelas ini permanen?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', id));
+                showToast("Terhapus");
+            } catch (error) {
+                console.error('Delete class error:', error);
+                showToast("Gagal menghapus: " + error.message, "error");
+            }
+        }
+
+        // Excel Handling
+        window.downloadTemplateExcel = () => {
+            const ws = XLSX.utils.json_to_sheet([{ "Kelas": "7A", "Link Rekapan Absen": "https://...", "Link Data Murid": "https://...", "Wali Kelas": "Budi" }]);
+            ws['!cols'] = [{wch:10}, {wch:40}, {wch:40}, {wch:25}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template");
+            XLSX.writeFile(wb, "Template_Rendat_Absen_Cerdas.xlsx");
+        }
+
+        window.handleExcelUpload = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!currentUser) return showToast('Firebase belum terhubung', 'error');
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+                    let count = 0;
+                    let skipped = 0;
+                    for (const row of rows) {
+                        const keys = Object.keys(row);
+                        const kl = keys.find(k => /kelas/i.test(k));
+                        const ab = keys.find(k => /absen/i.test(k));
+                        const mu = keys.find(k => /murid|siswa/i.test(k) && !/absen/i.test(k));
+                        const wa = keys.find(k => /wali/i.test(k));
+                        if (!kl || !row[kl]) { skipped++; continue; }
+                        const nama = String(row[kl]).toUpperCase().trim();
+                        const linkAbsen = safeHttpUrl(ab ? row[ab] : '');
+                        const linkMurid = safeHttpUrl(mu ? row[mu] : '');
+                        if (!nama || !linkAbsen || !linkMurid) { skipped++; continue; }
+                        const payload = {
+                            kelas: nama,
+                            linkAbsen,
+                            linkMurid,
+                            waliKelas: wa ? String(row[wa]).trim() : '',
+                            updatedAt: Date.now()
+                        };
+                        const ex = classList.find(c => String(c.kelas || '').toUpperCase() === nama);
+                        if (ex) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', ex.id), payload);
+                        else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'classes'), payload);
+                        count++;
+                    }
+                    showToast(`${count} data diproses${skipped ? `, ${skipped} dilewati` : ''}!`);
+                } catch (error) {
+                    console.error('Excel upload error:', error);
+                    showToast('File Excel gagal diproses: ' + error.message, 'error');
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.onerror = () => showToast('File tidak dapat dibaca', 'error');
+            reader.readAsArrayBuffer(file);
+        }
+
+        // WhatsApp Template Logic
+        window.selectTemplateCategory = (cat) => {
+            waTemplates[activeTemplateCategory] = document.getElementById("tplActiveTextarea").value;
+            activeTemplateCategory = cat;
+            document.querySelectorAll('.tpl-category-btn').forEach(b => b.className = "tpl-category-btn flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-100 transition");
+            document.getElementById(`tabTpl-${cat}`).className = "tpl-category-btn active flex-1 px-4 py-2.5 rounded-xl font-bold text-sm bg-brand-blue text-white shadow transition";
+            renderTemplateEditor();
+        }
+
+        function renderTemplateEditor() {
+            document.getElementById("tplSchoolNameInput").value = waTemplates.schoolName || defaultTemplates.schoolName;
+            document.getElementById("tplActiveTextarea").value = waTemplates[activeTemplateCategory];
+            
+            const vars = ["{SEKOLAH}", "{TANGGAL}", "{JAM}"];
+            if(['rekapan', 'data'].includes(activeTemplateCategory)) vars.unshift("{KELAS}", "{LINK}", "{WALI}");
+            if(activeTemplateCategory === 'menu') vars.unshift("{DAFTAR_KELAS}");
+            
+            const vc = document.getElementById("templateVariablesContainer");
+            vc.innerHTML = vars.map(v => `<button type="button" onclick="insertVar('${v}')" class="px-2 py-1 bg-blue-50 text-brand-blue border border-blue-200 rounded text-xs font-mono font-bold hover:bg-brand-gold">${v}</button>`).join("");
+            updateLivePreview();
+        }
+
+        window.insertVar = (v) => {
+            const t = document.getElementById("tplActiveTextarea");
+            t.value = t.value.substring(0, t.selectionStart) + v + t.value.substring(t.selectionEnd);
+            handleTemplateTextareaChange();
+        }
+
+        window.handleTemplateTextareaChange = () => {
+            waTemplates[activeTemplateCategory] = document.getElementById("tplActiveTextarea").value;
+            updateLivePreview();
+        }
+
+        window.updateLivePreview = () => {
+            const raw = waTemplates[activeTemplateCategory] || "";
+            const sn = document.getElementById("tplSchoolNameInput")?.value || "SMP Negeri 6";
+            const sc = classList[0] || {kelas:"7A", linkAbsen:"https://link-absen", linkMurid:"https://link-murid", waliKelas:"Guru A"};
+            const link = activeTemplateCategory === 'data' ? sc.linkMurid : sc.linkAbsen;
+            const dt = formatLocalDateTime();
+            const rendered = raw
+                .replace(/{SEKOLAH}/g, sn)
+                .replace(/{KELAS}/g, sc.kelas || '')
+                .replace(/{LINK}/g, link || '')
+                .replace(/{WALI}/g, sc.waliKelas || '-')
+                .replace(/{TANGGAL}/g, dt.date)
+                .replace(/{JAM}/g, dt.time)
+                .replace(/{DAFTAR_KELAS}/g, classList.length ? classList.map(c => c.kelas).join(', ') : '7A, 7B, 8A')
+                .replace(/{PESAN}/g, "HALO");
+            document.getElementById("tplLivePreviewHtml").innerHTML = markdownToSafeHtml(rendered);
+        }
+
+        window.saveWaTemplatesToCloud = async () => {
+            if(!currentUser) return;
+            waTemplates[activeTemplateCategory] = document.getElementById("tplActiveTextarea").value;
+            waTemplates.schoolName = document.getElementById("tplSchoolNameInput").value;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'wa_templates'), waTemplates);
+                showToast("Template WA Tersimpan!");
+                updateBotScript();
+                scheduleBotAutoSync();
+            } catch (error) {
+                console.error('Save template error:', error);
+                showToast("Gagal menyimpan template: " + error.message, "error");
+            }
+        }
+
+        window.resetWaTemplatesToDefault = () => {
+            waTemplates = {...defaultTemplates};
+            renderTemplateEditor();
+        }
+
+        // WhatsApp Simulator Chat
+        window.sendChatMessage = () => {
+            const text = document.getElementById("waChatInput").value.trim();
+            if(!text) return;
+            appendChat(text, 'out');
+            document.getElementById("waChatInput").value = "";
+            document.getElementById("botStatusIndicator").textContent = "mengetik...";
+            setTimeout(() => {
+                document.getElementById("botStatusIndicator").textContent = "Online";
+                botReply(text);
+            }, 600);
+        }
+
+        window.sendQuickKeyword = (k) => {
+            document.getElementById("waChatInput").value = k;
+            sendChatMessage();
+        }
+
+        window.clearChatSimulator = () => document.getElementById("chatMessages").innerHTML = "";
+
+        function appendChat(text, dir) {
+            const isOut = dir === 'out';
+            const html = markdownToSafeHtml(text);
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex justify-${isOut ? 'end' : 'start'}`;
+            const bubble = document.createElement('div');
+            bubble.className = `${isOut ? 'bg-wa-bubbleOut rounded-tr-none' : 'bg-wa-bubbleIn rounded-tl-none'} rounded-2xl p-3 shadow text-slate-800 max-w-[85%] border border-slate-200`;
+            bubble.innerHTML = `${html}<div class="text-[10px] text-slate-400 text-right mt-1">${new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date())} ${isOut ? '<i class="fa-solid fa-check-double text-blue-400"></i>' : ''}</div>`;
+            wrapper.append(bubble);
+            const cm = document.getElementById("chatMessages");
+            cm.append(wrapper);
+            cm.scrollTop = cm.scrollHeight;
+        }
+
+        function botReply(msg) {
+            const t = msg.toUpperCase().trim();
+            const sn = waTemplates.schoolName;
+            const dt = formatLocalDateTime();
+            const ds = dt.date;
+            const ts = dt.time;
+            
+            if(t.startsWith("REKAPAN ") || t.startsWith("DATA ")) {
+                const isRek = t.startsWith("REKAPAN");
+                const k = t.replace(isRek ? "REKAPAN" : "DATA", "").trim();
+                const c = classList.find(x => x.kelas === k);
+                if(c) {
+                    let r = waTemplates[isRek ? 'rekapan' : 'data'].replace(/{SEKOLAH}/g, sn).replace(/{KELAS}/g, c.kelas).replace(/{LINK}/g, isRek?c.linkAbsen:c.linkMurid).replace(/{WALI}/g, c.waliKelas||"-").replace(/{TANGGAL}/g, ds).replace(/{JAM}/g, ts);
+                    appendChat(r, 'in');
+                } else appendChat(`⚠️ Kelas *${k}* tidak ditemukan.`, 'in');
+            } else if (t === "MENU") {
+                appendChat(waTemplates.menu.replace(/{SEKOLAH}/g, sn).replace(/{DAFTAR_KELAS}/g, classList.map(c=>c.kelas).join(", ")), 'in');
+            } else {
+                appendChat(waTemplates.fallback.replace(/{PESAN}/g, msg).replace(/{SEKOLAH}/g, sn), 'in');
+            }
+        }
+
+        // Fonnte Logic — backend Apps Script + sinkronisasi otomatis
+        function getWebhookUrl() {
+            const raw = document.getElementById('fonnteWebhookUrlInput')?.value || '';
+            const url = safeHttpUrl(raw);
+            if (!url || !/\/exec(?:$|[?#])/i.test(url)) return '';
+            return url;
+        }
+
+        function getSyncKey() {
+            return String(document.getElementById('fonnteSyncKeyInput')?.value || '').trim();
+        }
+
+        function persistFonnteLocalSettings() {
+            try {
+                const webhook = document.getElementById('fonnteWebhookUrlInput')?.value.trim() || '';
+                const syncKey = getSyncKey();
+                if (webhook) localStorage.setItem(FONNTE_WEBHOOK_STORAGE_KEY, webhook);
+                if (syncKey) localStorage.setItem(FONNTE_SYNC_KEY_STORAGE_KEY, syncKey);
+            } catch (_) {}
+        }
+
+        function updateFonnteUI() {
+            const txt = document.getElementById('fonnteStatusText');
+            const dot = document.getElementById('navFonnteStatusDot');
+            const backend = document.getElementById('fonnteBackendStatus');
+            const device = document.getElementById('fonnteDeviceStatus');
+            const lastSync = document.getElementById('fonnteLastSync');
+            const st = fonnteBackendStatus;
+
+            if (backend) {
+                if (st?.configured) backend.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i> Terpasang</span>';
+                else if (st) backend.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Belum disinkron</span>';
+                else backend.innerHTML = '<span class="text-slate-500"><i class="fa-solid fa-circle-minus mr-1"></i> Belum diperiksa</span>';
+            }
+
+            if (device) {
+                if (st?.deviceStatus === 'connect') {
+                    const name = st.deviceName ? ` — ${escapeHtml(st.deviceName)}` : '';
+                    device.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i> Connect${name}</span>`;
+                } else if (st?.deviceStatus === 'disconnect') {
+                    device.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-circle-xmark mr-1"></i> Disconnect</span>';
+                } else {
+                    device.innerHTML = '<span class="text-slate-500"><i class="fa-solid fa-circle-minus mr-1"></i> Belum diperiksa</span>';
+                }
+            }
+
+            if (lastSync) lastSync.textContent = st?.lastSyncAt ? new Date(st.lastSyncAt).toLocaleString('id-ID') : '-';
+
+            const ready = Boolean(st?.configured && st?.deviceStatus === 'connect');
+            if (dot) dot.className = ready ? 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm' : (st ? 'w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm' : 'w-2.5 h-2.5 rounded-full bg-red-400 shadow-sm');
+
+            if (txt) {
+                if (ready) txt.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check"></i> Bot aktif. ${Number(st.classCount || 0)} kelas tersinkron.</span>`;
+                else if (st?.lastActionMessage) txt.innerHTML = `<span class="text-amber-700"><i class="fa-solid fa-circle-info"></i> ${escapeHtml(st.lastActionMessage)}</span>`;
+                else txt.innerHTML = '<span class="text-slate-400"><i class="fa-solid fa-circle-info"></i> Jalankan Instalasi Pertama jika Apps Script belum pernah dipasang.</span>';
+            }
+        }
+
+        window.toggleFonnteTokenVisibility = () => {
+            const i = document.getElementById('fonnteTokenInput');
+            if(i.type === 'password') { i.type='text'; document.getElementById('fonnteEyeIcon').className='fa-regular fa-eye-slash'; }
+            else { i.type='password'; document.getElementById('fonnteEyeIcon').className='fa-regular fa-eye'; }
+        };
+
+        window.saveFonnteToken = () => {
+            const t = document.getElementById('fonnteTokenInput').value.trim();
+            if (!t) return showToast('Token Fonnte wajib diisi', 'error');
+            try {
+                localStorage.setItem(FONNTE_STORAGE_KEY, t);
+                fonnteToken = t;
+                showToast('Token disimpan sementara. Tekan Sinkronkan & Aktifkan.');
+            } catch (error) {
+                console.error('Local storage error:', error);
+                showToast('Browser menolak penyimpanan lokal', 'error');
+            }
+        };
+
+        window.clearFonnteToken = () => {
+            try { localStorage.removeItem(FONNTE_STORAGE_KEY); } catch (_) {}
+            fonnteToken = '';
+            const input = document.getElementById('fonnteTokenInput');
+            if (input) input.value = '';
+            showToast('Token lokal dihapus. Token di backend tidak ikut dihapus.');
+        };
+
+        window.regenerateSyncKey = () => {
+            if (!confirm('Membuat kunci baru mengharuskan Anda menyalin ulang kode installer ke Apps Script. Lanjutkan?')) return;
+            const key = generateSyncKey();
+            document.getElementById('fonnteSyncKeyInput').value = key;
+            try { localStorage.setItem(FONNTE_SYNC_KEY_STORAGE_KEY, key); } catch (_) {}
+            updateBotScript();
+            showToast('Kunci baru dibuat. Pasang ulang kode installer Apps Script.', 'error');
+        };
+
+        window.toggleAutoSync = (enabled) => {
+            try { localStorage.setItem(FONNTE_AUTOSYNC_STORAGE_KEY, enabled ? '1' : '0'); } catch (_) {}
+            if (enabled) scheduleBotAutoSync();
+        };
+
+        function buildBotConfigPayload(includeToken, configureFonnte) {
+            const classes = {};
+            classList.forEach(c => {
+                const key = String(c.kelas || '').toUpperCase().trim();
+                if (!key) return;
+                classes[key] = {
+                    r: safeHttpUrl(c.linkAbsen),
+                    d: safeHttpUrl(c.linkMurid),
+                    w: String(c.waliKelas || '-').trim() || '-'
+                };
+            });
+            return {
+                token: includeToken ? String(document.getElementById('fonnteTokenInput')?.value || fonnteToken || '').trim() : '',
+                webhookUrl: getWebhookUrl(),
+                configureFonnte: Boolean(configureFonnte),
+                schoolName: String(waTemplates.schoolName || defaultTemplates.schoolName),
+                classes,
+                templates: {
+                    rekapan: String(waTemplates.rekapan || defaultTemplates.rekapan),
+                    data: String(waTemplates.data || defaultTemplates.data),
+                    menu: String(waTemplates.menu || defaultTemplates.menu),
+                    fallback: String(waTemplates.fallback || defaultTemplates.fallback)
+                }
+            };
+        }
+
+        function postToBotBackend(action, payload = {}, options = {}) {
+            const webhook = getWebhookUrl();
+            const syncKey = getSyncKey();
+            if (!webhook) {
+                if (!options.silent) showToast('Masukkan URL Apps Script /exec yang valid', 'error');
+                return Promise.reject(new Error('webhook-url-invalid'));
+            }
+            if (!syncKey) {
+                if (!options.silent) showToast('Kunci sinkron belum tersedia', 'error');
+                return Promise.reject(new Error('sync-key-empty'));
+            }
+            persistFonnteLocalSettings();
+
+            const actionId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            let iframe = document.getElementById('rendatBotSyncFrame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'rendatBotSyncFrame';
+                iframe.name = 'rendatBotSyncFrame';
+                iframe.className = 'hidden';
+                iframe.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(iframe);
+            }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = webhook;
+            form.target = 'rendatBotSyncFrame';
+            form.className = 'hidden';
+            const fields = { action, syncKey, actionId, payload: JSON.stringify(payload) };
+            Object.entries(fields).forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = name; input.value = value;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+            form.remove();
+            return waitForBackendAction(actionId, options);
+        }
+
+        function fetchBackendStatusJsonp() {
+            return new Promise((resolve, reject) => {
+                const webhook = getWebhookUrl();
+                if (!webhook) return reject(new Error('webhook-url-invalid'));
+                const cb = `__rendatStatus_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                const script = document.createElement('script');
+                const cleanup = () => {
+                    try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+                    script.remove();
+                };
+                const timer = setTimeout(() => { cleanup(); reject(new Error('status-timeout')); }, 8000);
+                window[cb] = (data) => {
+                    clearTimeout(timer);
+                    cleanup();
+                    resolve(data || {});
+                };
+                const sep = webhook.includes('?') ? '&' : '?';
+                script.src = `${webhook}${sep}action=status&callback=${encodeURIComponent(cb)}&_=${Date.now()}`;
+                script.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('status-load-failed')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        async function waitForBackendAction(actionId, options = {}) {
+            const attempts = options.attempts || 8;
+            for (let i = 0; i < attempts; i++) {
+                await new Promise(r => setTimeout(r, i === 0 ? 1300 : 900));
+                try {
+                    const status = await fetchBackendStatusJsonp();
+                    fonnteBackendStatus = status;
+                    updateFonnteUI();
+                    if (!actionId || status.lastActionId === actionId) return status;
+                } catch (error) {
+                    if (i === attempts - 1) throw error;
+                }
+            }
+            throw new Error('backend-action-timeout');
+        }
+
+        window.checkBotStatus = async (silent = false) => {
+            const webhook = getWebhookUrl();
+            if (!webhook) {
+                if (!silent) showToast('Masukkan URL Apps Script /exec', 'error');
+                return;
+            }
+            persistFonnteLocalSettings();
+            const btn = document.getElementById('btnCheckBotStatus');
+            if (btn) btn.disabled = true;
+            try {
+                const status = await fetchBackendStatusJsonp();
+                fonnteBackendStatus = status;
+                updateFonnteUI();
+                if (!silent) showToast(status.configured ? 'Backend bot terhubung' : 'Backend terhubung, tetapi belum disinkron');
+            } catch (error) {
+                console.error('Check bot status:', error);
+                fonnteBackendStatus = null;
+                updateFonnteUI();
+                if (!silent) showToast('Webhook belum dapat dihubungi. Periksa URL /exec dan deployment.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        };
+
+        window.syncBotNow = async (configureFonnte = true, silent = false) => {
+            const webhook = getWebhookUrl();
+            if (!webhook) return !silent && showToast('Masukkan URL Apps Script yang berakhiran /exec', 'error');
+            if (!classList.length) return !silent && showToast('Data kelas belum dimuat. Tunggu Firebase selesai.', 'error');
+
+            const tokenInput = String(document.getElementById('fonnteTokenInput')?.value || '').trim();
+            const alreadyHasToken = Boolean(fonnteBackendStatus?.tokenStored);
+            if (configureFonnte && !tokenInput && !fonnteToken && !alreadyHasToken) {
+                return !silent && showToast('Masukkan token Fonnte untuk sinkron pertama', 'error');
+            }
+            const btn = document.getElementById('btnSyncBot');
+            const original = btn?.innerHTML;
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyinkronkan...'; }
+            try {
+                const payload = buildBotConfigPayload(Boolean(tokenInput || fonnteToken), configureFonnte);
+                const status = await postToBotBackend('sync', payload, {silent, attempts:10});
+                if (status.lastActionOk) {
+                    if (tokenInput || fonnteToken) {
+                        try { localStorage.removeItem(FONNTE_STORAGE_KEY); } catch (_) {}
+                        fonnteToken = '';
+                        const input = document.getElementById('fonnteTokenInput');
+                        if (input) input.value = '';
+                    }
+                    if (!silent) showToast('Bot berhasil disinkron dan siap digunakan!');
+                } else if (!silent) {
+                    showToast(status.lastActionMessage || 'Sinkron gagal', 'error');
+                }
+            } catch (error) {
+                console.error('Sync bot error:', error);
+                if (!silent) showToast('Sinkron gagal. Pastikan kode installer dan URL /exec sudah benar.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = original; }
+            }
+        };
+
+        function scheduleBotAutoSync() {
+            clearTimeout(fonnteAutoSyncTimer);
+            const enabled = document.getElementById('fonnteAutoSync')?.checked;
+            if (!enabled || !getWebhookUrl() || !classList.length) return;
+            fonnteAutoSyncTimer = setTimeout(() => syncBotNow(false, true), 1800);
+        }
+
+        window.refreshFonnteDevice = async () => {
+            if (!fonnteBackendStatus?.tokenStored) return showToast('Sinkronkan bot terlebih dahulu agar token tersimpan di backend', 'error');
+            try {
+                const status = await postToBotBackend('refresh_device', {}, {attempts:8});
+                showToast(status.lastActionOk ? `Status perangkat: ${status.deviceStatus || 'tidak diketahui'}` : (status.lastActionMessage || 'Gagal memeriksa perangkat'), status.lastActionOk ? 'success' : 'error');
+            } catch (error) {
+                showToast('Gagal memeriksa perangkat Fonnte', 'error');
+            }
+        };
+
+        window.testSendFonnteMessage = async () => {
+            const no = document.getElementById('fonnteTestPhone').value.replace(/[^0-9]/g, '');
+            const msg = document.getElementById('fonnteTestMessage').value.trim();
+            if (!no || !msg) return showToast('No HP dan pesan wajib diisi', 'error');
+            if (!fonnteBackendStatus?.tokenStored) return showToast('Sinkronkan bot terlebih dahulu', 'error');
+            const btn = document.getElementById('btnFonnteTest');
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...';
+            try {
+                const status = await postToBotBackend('test_send', {target:no, message:msg}, {attempts:8});
+                showToast(status.lastActionOk ? 'Pesan uji diterima Fonnte!' : (status.lastActionMessage || 'Pengiriman gagal'), status.lastActionOk ? 'success' : 'error');
+            } catch (error) {
+                console.error('Fonnte test error:', error);
+                showToast('Gagal mengirim melalui backend', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        };
+
+        // Installer Apps Script: dipasang sekali, selanjutnya data disinkron dari aplikasi.
+        window.openTemplateGuideModal = () => {
+            updateBotScript();
+            document.getElementById('guideModal').classList.remove('hidden');
+        };
+        window.closeGuideModal = () => document.getElementById('guideModal').classList.add('hidden');
+        window.copyGeneratedBotScript = () => copyText(document.getElementById('botScriptCode').textContent, 'Installer Apps Script');
+
+        function updateBotScript() {
+            const syncKey = getSyncKey() || (() => {
+                const key = generateSyncKey();
+                const input = document.getElementById('fonnteSyncKeyInput');
+                if (input) input.value = key;
+                try { localStorage.setItem(FONNTE_SYNC_KEY_STORAGE_KEY, key); } catch (_) {}
+                return key;
+            })();
+            const script = `// RENDAT ABSEN CERDAS — FONNTE BOT BACKEND\n// Pasang SEKALI sebagai Google Apps Script Web App.\n// Setelah itu, data kelas/template/token disinkron langsung dari dashboard.\n\nvar SYNC_KEY = ${JSON.stringify(syncKey)};\n\nfunction props_() { return PropertiesService.getScriptProperties(); }\n\nfunction outJson_(obj) {\n  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);\n}\n\nfunction outStatus_(obj, callback) {\n  var json = JSON.stringify(obj);\n  if (callback && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(callback)) {\n    return ContentService.createTextOutput(callback + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);\n  }\n  return outJson_(obj);\n}\n\nfunction setAction_(id, ok, message) {\n  props_().setProperties({\n    LAST_ACTION_ID: String(id || ''),\n    LAST_ACTION_OK: ok ? '1' : '0',\n    LAST_ACTION_MESSAGE: String(message || ''),\n    LAST_ACTION_AT: new Date().toISOString()\n  }, false);\n}\n\nfunction status_() {\n  var p = props_();\n  var db = {};\n  try { db = JSON.parse(p.getProperty('BOT_DB') || '{}'); } catch (_) {}\n  return {\n    ok: true,\n    configured: Boolean(p.getProperty('BOT_DB') && p.getProperty('FONNTE_TOKEN')),\n    tokenStored: Boolean(p.getProperty('FONNTE_TOKEN')),\n    classCount: Object.keys(db).length,\n    schoolName: p.getProperty('BOT_SCHOOL') || '',\n    deviceStatus: p.getProperty('DEVICE_STATUS') || '',\n    deviceName: p.getProperty('DEVICE_NAME') || '',\n    lastSyncAt: p.getProperty('LAST_SYNC_AT') || '',\n    lastWebhookAt: p.getProperty('LAST_WEBHOOK_AT') || '',\n    lastActionId: p.getProperty('LAST_ACTION_ID') || '',\n    lastActionOk: p.getProperty('LAST_ACTION_OK') === '1',\n    lastActionMessage: p.getProperty('LAST_ACTION_MESSAGE') || ''\n  };\n}\n\nfunction doGet(e) {\n  var action = String((e && e.parameter && e.parameter.action) || 'health');\n  if (action === 'status') return outStatus_(status_(), String(e.parameter.callback || ''));\n  return ContentService.createTextOutput('Webhook RENDAT ABSEN CERDAS aktif').setMimeType(ContentService.MimeType.TEXT);\n}\n\nfunction doPost(e) {\n  try {\n    var action = String((e && e.parameter && e.parameter.action) || '');\n    if (action) return handleAdminAction_(e, action);\n    return handleFonnteWebhook_(e);\n  } catch (err) {\n    return outJson_({ok:false, error:String(err)});\n  }\n}\n\nfunction handleAdminAction_(e, action) {\n  var key = String(e.parameter.syncKey || '');\n  var actionId = String(e.parameter.actionId || '');\n  if (!key || key !== SYNC_KEY) {\n    setAction_(actionId, false, 'Kunci sinkron tidak cocok');\n    return outJson_({ok:false, error:'unauthorized'});\n  }\n  var payload = {};\n  try { payload = JSON.parse(String(e.parameter.payload || '{}')); } catch (_) {}\n\n  if (action === 'sync') {\n    var p = props_();\n    if (payload.token) p.setProperty('FONNTE_TOKEN', String(payload.token));\n    if (!p.getProperty('FONNTE_TOKEN')) {\n      setAction_(actionId, false, 'Token Fonnte belum tersedia');\n      return outJson_({ok:false});\n    }\n    p.setProperty('BOT_SCHOOL', String(payload.schoolName || 'SMP Negeri 6'));\n    p.setProperty('BOT_DB', JSON.stringify(payload.classes || {}));\n    p.setProperty('BOT_TPL', JSON.stringify(payload.templates || {}));\n    p.setProperty('LAST_SYNC_AT', new Date().toISOString());\n\n    var profile = getDeviceProfile_();\n    if (profile && profile.status) {\n      p.setProperty('DEVICE_STATUS', String(profile.device_status || ''));\n      p.setProperty('DEVICE_NAME', String(profile.name || ''));\n    }\n\n    var configureMessage = 'Data bot tersinkron';\n    var configureOk = true;\n    if (payload.configureFonnte && payload.webhookUrl && profile && profile.status) {\n      var conf = configureDevice_(profile, String(payload.webhookUrl));\n      configureOk = Boolean(conf && conf.status);\n      configureMessage = configureOk ? 'Bot aktif dan webhook Fonnte diperbarui' : String((conf && (conf.reason || conf.detail)) || 'Konfigurasi webhook Fonnte gagal');\n    }\n    setAction_(actionId, configureOk, configureMessage);\n    return outJson_({ok:configureOk, status:status_()});\n  }\n\n  if (action === 'refresh_device') {\n    var prof = getDeviceProfile_();\n    if (prof && prof.status) {\n      props_().setProperties({DEVICE_STATUS:String(prof.device_status || ''), DEVICE_NAME:String(prof.name || '')}, false);\n      setAction_(actionId, true, 'Status perangkat diperbarui');\n    } else {\n      setAction_(actionId, false, String((prof && prof.reason) || 'Gagal memeriksa perangkat'));\n    }\n    return outJson_({ok:Boolean(prof && prof.status)});\n  }\n\n  if (action === 'test_send') {\n    var target = String(payload.target || '').replace(/[^0-9]/g, '');\n    var message = String(payload.message || '').trim();\n    if (!target || !message) {\n      setAction_(actionId, false, 'Target/pesan kosong');\n      return outJson_({ok:false});\n    }\n    var sent = sendFonnte_(target, message, '');\n    setAction_(actionId, Boolean(sent && sent.status), String((sent && (sent.reason || sent.detail)) || (sent && sent.status ? 'Pesan diterima Fonnte' : 'Pengiriman gagal')));\n    return outJson_({ok:Boolean(sent && sent.status)});\n  }\n\n  setAction_(actionId, false, 'Aksi tidak dikenal');\n  return outJson_({ok:false});\n}\n\nfunction getDeviceProfile_() {\n  var token = props_().getProperty('FONNTE_TOKEN');\n  if (!token) return {status:false, reason:'Token belum tersedia'};\n  var res = UrlFetchApp.fetch('https://api.fonnte.com/device', {\n    method:'post', headers:{Authorization:token}, muteHttpExceptions:true\n  });\n  try { return JSON.parse(res.getContentText() || '{}'); }\n  catch (_) { return {status:false, reason:'Respons profil Fonnte tidak valid'}; }\n}\n\nfunction configureDevice_(profile, webhookUrl) {\n  var token = props_().getProperty('FONNTE_TOKEN');\n  var res = UrlFetchApp.fetch('https://api.fonnte.com/update-device', {\n    method:'post',\n    headers:{Authorization:token},\n    payload:{\n      name:String(profile.name || 'RENDAT BOT').slice(0,30),\n      device:String(profile.device || ''),\n      webhook:webhookUrl,\n      autoread:'true',\n      personal:'true'\n    },\n    muteHttpExceptions:true\n  });\n  try { return JSON.parse(res.getContentText() || '{}'); }\n  catch (_) { return {status:false, reason:'Respons update-device tidak valid'}; }\n}\n\nfunction fmt_(template, vars) {\n  var out = String(template || '');\n  Object.keys(vars).forEach(function(k) {\n    out = out.split('{' + k + '}').join(vars[k] == null ? '' : String(vars[k]));\n  });\n  return out;\n}\n\nfunction sendFonnte_(target, message, inboxid) {\n  var token = props_().getProperty('FONNTE_TOKEN');\n  if (!token) return {status:false, reason:'Token belum tersedia'};\n  var payload = {target:String(target), message:String(message), countryCode:'62'};\n  if (inboxid) payload.inboxid = inboxid;\n  var res = UrlFetchApp.fetch('https://api.fonnte.com/send', {\n    method:'post', headers:{Authorization:token}, payload:payload, muteHttpExceptions:true\n  });\n  try { return JSON.parse(res.getContentText() || '{}'); }\n  catch (_) { return {status:false, reason:'Respons send Fonnte tidak valid'}; }\n}\n\nfunction handleFonnteWebhook_(e) {\n  var data = {};\n  try { data = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (_) {}\n  var sender = String(data.sender || '').trim();\n  var raw = String(data.message || data.text || '').trim();\n  var inboxid = data.inboxid || '';\n  if (!sender || !raw) return outJson_({ok:false, error:'sender/message kosong'});\n\n  var p = props_();\n  p.setProperty('LAST_WEBHOOK_AT', new Date().toISOString());\n  var DB = {}; var TPL = {};\n  try { DB = JSON.parse(p.getProperty('BOT_DB') || '{}'); } catch (_) {}\n  try { TPL = JSON.parse(p.getProperty('BOT_TPL') || '{}'); } catch (_) {}\n  var SEKOLAH = p.getProperty('BOT_SCHOOL') || 'SMP Negeri 6';\n  var msg = raw.toUpperCase().replace(/\\s+/g, ' ').trim();\n  var now = new Date();\n  var tz = Session.getScriptTimeZone() || 'Asia/Jayapura';\n  var tanggal = Utilities.formatDate(now, tz, 'dd/MM/yyyy');\n  var jam = Utilities.formatDate(now, tz, 'HH:mm');\n  var reply = '';\n  var m;\n\n  if ((m = msg.match(/^REKAPAN\\s+(.+)$/))) {\n    var k = String(m[1] || '').trim();\n    reply = DB[k] ? fmt_(TPL.rekapan, {SEKOLAH:SEKOLAH,KELAS:k,LINK:DB[k].r,WALI:DB[k].w,TANGGAL:tanggal,JAM:jam}) : '⚠️ Kelas *' + k + '* tidak ditemukan.\\nKetik *MENU* untuk daftar kelas.';\n  } else if ((m = msg.match(/^DATA\\s+(.+)$/))) {\n    var k2 = String(m[1] || '').trim();\n    reply = DB[k2] ? fmt_(TPL.data, {SEKOLAH:SEKOLAH,KELAS:k2,LINK:DB[k2].d,WALI:DB[k2].w,TANGGAL:tanggal,JAM:jam}) : '⚠️ Kelas *' + k2 + '* tidak ditemukan.\\nKetik *MENU* untuk daftar kelas.';\n  } else if (msg === 'MENU') {\n    reply = fmt_(TPL.menu, {SEKOLAH:SEKOLAH,DAFTAR_KELAS:Object.keys(DB).sort().join(', '),TANGGAL:tanggal,JAM:jam});\n  } else {\n    reply = fmt_(TPL.fallback, {SEKOLAH:SEKOLAH,PESAN:raw,TANGGAL:tanggal,JAM:jam});\n  }\n\n  if (!reply) reply = 'Bot belum memiliki template. Silakan sinkronkan dari dashboard RENDAT.';\n  var sent = sendFonnte_(sender, reply, inboxid);\n  return outJson_({ok:Boolean(sent && sent.status)});\n}\n`;
+            const box = document.getElementById('botScriptCode');
+            if (box) box.textContent = script;
+        }
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+        window.addEventListener('error', (event) => {
+            console.error('Runtime error:', event.error || event.message);
+        });
+
+        // Start App
+        initApp();
+    </script>
+</body>
+</html>
